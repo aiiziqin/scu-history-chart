@@ -4,7 +4,7 @@
 
 ## 在线查看
 
-开启 GitHub Pages 后访问：`https://<用户名>.github.io/<仓库名>/`
+开启 GitHub Pages 后访问：`[https://aiiziqin.github.io/scu-history-chart/](https://aiiziqin.github.io/scu-history-chart/)`
 
 ## 看图说明
 
