@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>四川大学全院系历史沿革图（v0.4 网格版）</title>
+<style>
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background:#fff; margin:16px; }
+  h1 { font-size:20px; margin:0 0 4px 0; }
+  .sub { color:#666; font-size:12px; margin-bottom:10px; max-width:1100px; }
+  .legend { margin:8px 0; font-size:12px; }
+  .legend span { display:inline-block; margin-right:12px; }
+  .legend i { display:inline-block; width:13px; height:13px; vertical-align:-2px; margin-right:4px; border:1px solid rgba(0,0,0,.15); }
+  svg text { font-family:"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif; }
+  .legend i.mk { border:none; border-radius:50%; width:14px; height:14px; vertical-align:-3px; color:#fff; font-size:9px; line-height:14px; text-align:center; font-style:normal; font-weight:bold; }
+  .events { color:#555; font-size:12px; margin-top:14px; max-width:1100px; }
+  .events b { color:#c0392b; }
+  .events li { margin:3px 0; }
+</style>
+</head>
+<body>
+<h1>四川大学院系历史沿革全景图（1896—2026 · 网格版）</h1>
+<div class="sub">每列 = 一个学院（表头竖排院名，按学部分组）；每行 = 一个年份（左侧逐年标注）；单元格颜色 = 该学院当年所属的母体大学；空白 = 尚未存在；半透明色块 = 筹建/中断期；表头区浅色 = 早于1896年基线的源头期（悬停查看）；<b>1994—1998</b> 四川联合大学时期，原川大各系所统一显示为紫色。色块分界处的 <b>并 / 分</b> 圆点标记该年的合并、拆分事件，悬停可查看详情。悬停色块可查看当时名称与起止年份。</div>
+<div class="legend" id="legend"></div>
+<svg id="chart" xmlns="http://www.w3.org/2000/svg"></svg>
+<ul class="events" id="events"></ul>
+
+<script>
+// 旧甘特图参数已移除；网格版参数在下方渲染区统一定义
+
+const COLORS = {
+  scu:   { name: "四川大学线（中西学堂/省城高等学堂/国立成大/国立川大）", c: "#A8C4E8" },
+  huaxi: { name: "华西协合大学/华西医科大学线", c: "#F2B8C0" },
+  cdut:  { name: "成都工学院/成都科学技术大学线", c: "#F5C98A" },
+  chem:  { name: "四川化学工业学院线(1952-1955)", c: "#B8DFA8" },
+  scul:  { name: "四川联合大学(1994-1998)", c: "#C9B3E6" },
+  other: { name: "其他外部母体（块内标注）", c: "#DCD6C8" }
+};
+const GROUPS = { base:"校史基线（校本部）", sci:"理学部", eng:"工学部", med:"医学部（华西）", lib:"人文社科学部", res:"实体研究院所" };
+// g=分组；s/e=起止年；label=当时名称；c=母体颜色键
+const ROWS = [
+// ===== 校史基线 =====
+{ g:"base", name:"原四川大学（校本部）", blocks:[
+  {s:1896,e:1994,label:"四川中西学堂→(国立)四川大学",c:"scu"},
+  {s:1994,e:1998,label:"四川联合大学",c:"scul"},
+  {s:1998,e:2026,label:"四川大学",c:"scu"}]},
+{ g:"base", name:"成都工科线（校本部）", blocks:[
+  {s:1954,e:1978,label:"成都工学院",c:"cdut"},
+  {s:1978,e:1994,label:"成都科学技术大学",c:"cdut"}]},
+{ g:"base", name:"华西线（校本部）", blocks:[
+  {s:1910,e:1953,label:"华西协合大学→华西大学",c:"huaxi"},
+  {s:1953,e:1985,label:"四川医学院",c:"huaxi"},
+  {s:1985,e:2000,label:"华西医科大学",c:"huaxi"},
+  {s:2000,e:2026,label:"（并入四川大学）",c:"scu",ghost:true}]},
+// ===== 理学部 =====
+{ g:"sci", name:"数学学院", blocks:[
+  {s:1896,e:1902,label:"中西学堂算学馆",c:"scu"},
+  {s:1902,e:1924,label:"省城高等学堂算学",c:"scu"},
+  {s:1924,e:1931,label:"国立成大师/成大数学系",c:"scu"},
+  {s:1931,e:1952,label:"国立川大数学系",c:"scu"},
+  {s:1952,e:1994,label:"四川大学数学系（重大/华西师资并入）",c:"scu"},
+  {s:1994,e:1998,label:"川联大数学系",c:"scul"},
+  {s:1998,e:2026,label:"数学学院",c:"scu"}]},
+{ g:"sci", name:"物理学院", blocks:[
+  {s:1907,e:1926,label:"高等学堂格致科物理门",c:"scu"},
+  {s:1926,e:1931,label:"国立成大物理系",c:"scu"},
+  {s:1931,e:1935,label:"国立川大物理系",c:"scu"},
+  {s:1935,e:1950,label:"数理系",c:"scu"},
+  {s:1950,e:1954,label:"理学院物理系",c:"scu"},
+  {s:1954,e:1994,label:"物理系（华西物理力量2000年并入）",c:"scu"},
+  {s:1994,e:1998,label:"川联大物理系",c:"scul"},
+  {s:1998,e:2001,label:"物理系",c:"scu"},
+  {s:2001,e:2019,label:"物理科学与技术学院(核科学与工程学院)",c:"scu"},
+  {s:2019,e:2026,label:"物理学院",c:"scu"}]},
+{ g:"sci", name:"化学学院", blocks:[
+  {s:1907,e:1916,label:"高等学堂化学门",c:"scu"},
+  {s:1916,e:1926,label:"国立成大师理化部",c:"scu"},
+  {s:1926,e:1931,label:"国立成大化学系",c:"scu"},
+  {s:1931,e:1950,label:"国立川大理学院化学系",c:"scu"},
+  {s:1950,e:1994,label:"川大化学系（重大/川北/华西化学系并入）",c:"scu"},
+  {s:1994,e:1998,label:"川联大化学系",c:"scul"},
+  {s:1998,e:2026,label:"化学学院（2000华西基础化学并入）",c:"scu"}]},
+{ g:"sci", name:"生命科学学院", blocks:[
+  {s:1896,e:1916,label:"博物学课程",c:"scu"},
+  {s:1916,e:1926,label:"国立成大师博物部",c:"scu"},
+  {s:1926,e:1931,label:"国立成大生物学系",c:"scu"},
+  {s:1931,e:1994,label:"生物系（华西生物系1952并入）",c:"scu"},
+  {s:1994,e:1998,label:"川联大生命科学与工程学院",c:"scul"},
+  {s:1998,e:2026,label:"生命科学学院",c:"scu"}]},
+// ===== 工学部 =====
+{ g:"eng", name:"机械工程学院", blocks:[
+  {s:1908,e:1945,label:"四川工业学堂机械科",c:"other"},
+  {s:1945,e:1953,label:"国立川大机械电机工程系",c:"scu"},
+  {s:1953,e:1978,label:"成都工学院机械工程系",c:"cdut"},
+  {s:1978,e:1994,label:"成都科大机械工程系",c:"cdut"},
+  {s:1994,e:1998,label:"川联大制造科学与工程学院",c:"scul"},
+  {s:1998,e:2019,label:"制造科学与工程学院",c:"scu"},
+  {s:2019,e:2026,label:"机械工程学院",c:"scu"}]},
+{ g:"eng", name:"电气工程学院", blocks:[
+  {s:1908,e:1944,label:"早期电气工程教育",c:"other"},
+  {s:1944,e:1953,label:"国立川大工学院机电工程系",c:"scu"},
+  {s:1953,e:1978,label:"成都工学院电机系",c:"cdut"},
+  {s:1978,e:1994,label:"成都科大电力/自动化/应电三系",c:"cdut"},
+  {s:1994,e:1998,label:"川联大三系",c:"scul"},
+  {s:1998,e:2026,label:"电气工程学院（1998三系合建）",c:"scu"}]},
+{ g:"eng", name:"材料科学与工程学院", blocks:[
+  {s:1954,e:1978,label:"成都工学院材料类专业",c:"cdut"},
+  {s:1978,e:1994,label:"成都科大金属/无机材料系；川大材料科学系",c:"cdut"},
+  {s:1994,e:1998,label:"川联大三系",c:"scul"},
+  {s:1998,e:2001,label:"川大三系",c:"scu"},
+  {s:2001,e:2026,label:"材料科学与工程学院(2001组建)",c:"scu"}]},
+{ g:"eng", name:"建筑与环境学院", blocks:[
+  {s:1945,e:1953,label:"国立川大土木水利系(土木)",c:"scu"},
+  {s:1953,e:1978,label:"成都工学院土木系（部分1956-60迁重庆交通学院）",c:"cdut"},
+  {s:1978,e:1988,label:"成都科大土木工程系等",c:"cdut"},
+  {s:1988,e:1994,label:"成都科大城建环保学院(1988)",c:"cdut"},
+  {s:1994,e:1998,label:"川联大城建环保学院",c:"scul"},
+  {s:1998,e:2001,label:"川大城建环保学院",c:"scu"},
+  {s:2001,e:2026,label:"建筑与环境学院(2001组建)",c:"scu"}]},
+{ g:"eng", name:"水利水电学院", blocks:[
+  {s:1944,e:1953,label:"国立川大土木水利系(水利)",c:"scu"},
+  {s:1953,e:1978,label:"成都工学院水利系",c:"cdut"},
+  {s:1978,e:1994,label:"成都科大水利系",c:"cdut"},
+  {s:1994,e:1998,label:"川联大水利系(1993土木分出)",c:"scul"},
+  {s:1998,e:2026,label:"水利水电学院",c:"scu"}]},
+{ g:"eng", name:"化学工程学院", blocks:[
+  {s:1952,e:1955,label:"四川化学工业学院(十校合组)",c:"chem"},
+  {s:1955,e:1978,label:"成都工学院化工系",c:"cdut"},
+  {s:1978,e:1994,label:"成都科大化工系",c:"cdut"},
+  {s:1994,e:1998,label:"川联大化学科学与工程学院",c:"scul"},
+  {s:1998,e:2026,label:"化学工程学院",c:"scu"}]},
+{ g:"eng", name:"轻工科学与工程学院", blocks:[
+  {s:1921,e:1952,label:"燕京大学制革学系",c:"other"},
+  {s:1952,e:1955,label:"四川化工学院皮革专业(张铨)",c:"chem"},
+  {s:1955,e:1978,label:"成都工学院皮革工学专业",c:"cdut"},
+  {s:1978,e:1986,label:"成都科大皮革专业",c:"cdut"},
+  {s:1986,e:1994,label:"成都科大皮革工程系",c:"cdut"},
+  {s:1994,e:1998,label:"川联大皮革工程系",c:"scul"},
+  {s:1998,e:2001,label:"川大皮革工程系",c:"scu"},
+  {s:2001,e:2019,label:"轻纺与食品学院(2001组建)",c:"scu"},
+  {s:2019,e:2026,label:"轻工科学与工程学院",c:"scu"}]},
+{ g:"eng", name:"高分子科学与工程学院", blocks:[
+  {s:1953,e:1955,label:"四川化工学院塑料工学专业(徐僖)",c:"chem"},
+  {s:1955,e:1961,label:"成都工学院塑料工学专业",c:"cdut"},
+  {s:1961,e:1978,label:"高分子化工系(1961组建,国内首个)",c:"cdut"},
+  {s:1978,e:1994,label:"成都科大四系一所(含高分子研究所1964)",c:"cdut"},
+  {s:1994,e:1998,label:"川联大高分子材料系/塑料工程系",c:"scul"},
+  {s:1998,e:2001,label:"高分子材料科学与工程系",c:"scu"},
+  {s:2001,e:2026,label:"高分子科学与工程学院(2001组建)",c:"scu"}]},
+{ g:"eng", name:"生物医学工程学院", blocks:[
+  {s:1978,e:1994,label:"成都科大+四川医学院共建生医工学科",c:"cdut"},
+  {s:1994,e:1998,label:"川联大生物医学工程学科",c:"scul"},
+  {s:1998,e:2020,label:"川大生医工学科(依托材料学院生医工系)",c:"scu"},
+  {s:2020,e:2026,label:"生物医学工程学院(2020组建)",c:"scu"}]},
+{ g:"eng", name:"电子信息学院", blocks:[
+  {s:1896,e:1902,label:"中西学堂算学",c:"scu"},
+  {s:1902,e:1954,label:"高等学堂物理正科→川大物理系",c:"scu"},
+  {s:1954,e:1960,label:"物理系光学/无线电专门化",c:"scu"},
+  {s:1960,e:1990,label:"无线电电子学系(1960)",c:"scu"},
+  {s:1990,e:1998,label:"光电科学技术系",c:"scu"},
+  {s:1998,e:2026,label:"电子信息学院(1998组建)",c:"scu"}]},
+{ g:"eng", name:"计算机学院（软件学院）", blocks:[
+  {s:1958,e:1981,label:"计算机专业(1958)",c:"scu"},
+  {s:1981,e:1994,label:"计算机科学系(1981)",c:"scu"},
+  {s:1994,e:1998,label:"川联大计算机科学系",c:"scul"},
+  {s:1998,e:2026,label:"计算机学院(2001建国家示范软件学院)",c:"scu"}]},
+{ g:"eng", name:"网络空间安全学院", blocks:[
+  {s:1958,e:2016,label:"计算机学科网安方向",c:"scu"},
+  {s:2016,e:2026,label:"网络空间安全学院(2016,首批一流网安学院)",c:"scu"}]},
+{ g:"eng", name:"空天科学与工程学院", blocks:[
+  {s:1945,e:1952,label:"国立川大航空系(1945)",c:"scu"},
+  {s:1952,e:2011,label:"航空系调出,学科中断",c:"scu",ghost:true},
+  {s:2011,e:2026,label:"航空航天学院(2011)→空天科学与工程学院(2012)",c:"scu"}]},
+{ g:"eng", name:"碳中和未来技术学院", blocks:[
+  {s:1896,e:2022,label:"环境/化工/能源学科基础",c:"scu",ghost:true},
+  {s:2022,e:2026,label:"碳中和未来技术学院(2022.3揭牌)",c:"scu"}]},
+{ g:"eng", name:"人工智能学院", blocks:[
+  {s:1958,e:2022,label:"计算机学科AI方向",c:"scu",ghost:true},
+  {s:2022,e:2026,label:"智能科学与技术学院(2022)→人工智能学院(2026揭牌)",c:"scu"}]},
+// ===== 医学部 =====
+{ g:"med", name:"华西基础医学与法医学院", blocks:[
+  {s:1914,e:1953,label:"华西协合大学医科基础学科",c:"huaxi"},
+  {s:1953,e:1985,label:"四川医学院基础医学部",c:"huaxi"},
+  {s:1985,e:1987,label:"华西医科大学",c:"huaxi"},
+  {s:1987,e:1999,label:"华西基础医学院(1987)",c:"huaxi"},
+  {s:1999,e:2000,label:"+法医学院(1999)",c:"huaxi"},
+  {s:2000,e:2001,label:"并入川大",c:"scu"},
+  {s:2001,e:2026,label:"华西基础医学与法医学院(2001合并组建)",c:"scu"}]},
+{ g:"med", name:"华西临床医学院（华西医院）", blocks:[
+  {s:1892,e:1913,label:"仁济/存仁医院(教会)",c:"other"},
+  {s:1913,e:1953,label:"华西协合大学医科/医院(1938三大学联合医院)",c:"huaxi"},
+  {s:1953,e:1985,label:"四川医学院附属医院",c:"huaxi"},
+  {s:1985,e:2000,label:"华西医科大学附一院/临床医学院",c:"huaxi"},
+  {s:2000,e:2026,label:"华西临床医学院/华西医院",c:"scu"}]},
+{ g:"med", name:"华西口腔医学院", blocks:[
+  {s:1907,e:1917,label:"仁济牙科诊所→牙症医院",c:"other"},
+  {s:1917,e:1953,label:"华西协合大学牙学院(1917,中国最早)",c:"huaxi"},
+  {s:1953,e:1985,label:"四川医学院口腔系",c:"huaxi"},
+  {s:1985,e:2000,label:"华西医科大学口腔医学院",c:"huaxi"},
+  {s:2000,e:2026,label:"华西口腔医学院/口腔医院",c:"scu"}]},
+{ g:"med", name:"华西公共卫生学院", blocks:[
+  {s:1914,e:1936,label:"华西协合公卫课程组",c:"huaxi"},
+  {s:1936,e:1953,label:"公卫学系",c:"huaxi"},
+  {s:1953,e:1986,label:"四川医学院卫生系",c:"huaxi"},
+  {s:1986,e:2000,label:"华西医科大学公共卫生学院(1986)",c:"huaxi"},
+  {s:2000,e:2026,label:"华西公共卫生学院(含华西第四医院)",c:"scu"}]},
+{ g:"med", name:"华西药学院", blocks:[
+  {s:1918,e:1932,label:"制药专修学校(米玉士)",c:"huaxi"},
+  {s:1932,e:1953,label:"华西协合理学院制药系",c:"huaxi"},
+  {s:1953,e:1985,label:"四川医学院药学系",c:"huaxi"},
+  {s:1985,e:1987,label:"华西医科大学药学系",c:"huaxi"},
+  {s:1987,e:2000,label:"华西药学院(1987)",c:"huaxi"},
+  {s:2000,e:2026,label:"四川大学华西药学院",c:"scu"}]},
+// ===== 人文社科学部 =====
+{ g:"lib", name:"文学院（中文系）", blocks:[
+  {s:1896,e:1931,label:"中西学堂文科→高等学堂正科一部→国立成大中文系科",c:"scu"},
+  {s:1931,e:1952,label:"国立川大文学院中文系",c:"scu"},
+  {s:1952,e:1994,label:"四川大学中文系",c:"scu"},
+  {s:1994,e:1998,label:"四川大学文学院(1994恢复)",c:"scu"},
+  {s:1998,e:2024,label:"文学与新闻学院(1998合并)",c:"scu"},
+  {s:2024,e:2026,label:"文学院(2024分设)",c:"scu"}]},
+{ g:"lib", name:"新闻传播与出版学院", blocks:[
+  {s:1981,e:1995,label:"四川大学新闻系(1981复办)",c:"scu"},
+  {s:1995,e:1998,label:"新闻学院",c:"scu"},
+  {s:1998,e:2024,label:"并入文学与新闻学院",c:"scu",ghost:true},
+  {s:2024,e:2026,label:"新闻传播与出版学院(2024分设)",c:"scu"}]},
+{ g:"lib", name:"外国语学院", blocks:[
+  {s:1896,e:1952,label:"中西学堂英法文科→国立川大外文系",c:"scu"},
+  {s:1952,e:1994,label:"四川大学外文系",c:"scu"},
+  {s:1994,e:1998,label:"川联大外文系(并成都科大外语系)",c:"scul"},
+  {s:1998,e:2000,label:"川大外文系",c:"scu"},
+  {s:2000,e:2026,label:"外国语学院(并华西医大外语系)",c:"scu"}]},
+{ g:"lib", name:"历史文化学院（旅游、考古文博）", blocks:[
+  {s:1875,e:1902,label:"尊经书院(1875)",c:"scu"},
+  {s:1902,e:1910,label:"四川高等学堂外国历史公共科",c:"scu"},
+  {s:1910,e:1927,label:"存古学堂→国学学校(史学门)",c:"scu"},
+  {s:1927,e:1931,label:"公立川大中国文学院历史科",c:"scu"},
+  {s:1931,e:1999,label:"历史系(1960设考古专业,全国最早之一)",c:"scu"},
+  {s:1999,e:2000,label:"历史文化学院(1999)",c:"scu"},
+  {s:2000,e:2020,label:"+旅游学院(2000)",c:"scu"},
+  {s:2020,e:2026,label:"+考古文博学院(2020)",c:"scu"}]},
+{ g:"lib", name:"哲学系", blocks:[
+  {s:1896,e:1902,label:"中西学堂",c:"scu"},
+  {s:1902,e:1910,label:"高等学堂经学门",c:"scu"},
+  {s:1910,e:1927,label:"存古学堂→国学学校(哲学科)",c:"scu"},
+  {s:1927,e:1931,label:"公立川大哲学科",c:"scu"},
+  {s:1931,e:1959,label:"国立川大哲学系(后中断)",c:"scu"},
+  {s:1959,e:2001,label:"哲学系(1959复建,1980宗教学所)",c:"scu"},
+  {s:2001,e:2026,label:"哲学系(属公共管理学院)",c:"scu"}]},
+{ g:"lib", name:"古典学系", blocks:[
+  {s:2024,e:2025,label:"哲学系古典学拔尖计划(2024)",c:"scu"},
+  {s:2025,e:2026,label:"古典学系(2025.3成立)",c:"scu"}]},
+{ g:"lib", name:"经济学院", blocks:[
+  {s:1905,e:1952,label:"高等学堂商科→国立川大经济系",c:"scu"},
+  {s:1952,e:1985,label:"经济学系(1952经济学科调四川财经学院后恢复)",c:"scu"},
+  {s:1985,e:2026,label:"经济学院(1985.11成立)",c:"scu"}]},
+{ g:"lib", name:"商学院", blocks:[
+  {s:1905,e:1909,label:"高等学堂半日学堂",c:"scu"},
+  {s:1909,e:1915,label:"四川商业学堂(1909)",c:"other"},
+  {s:1915,e:1931,label:"公立法政专门→公立川大",c:"other"},
+  {s:1931,e:1985,label:"国立川大→川大商科经管类系科",c:"scu"},
+  {s:1985,e:2001,label:"经济管理学院建制",c:"scu"},
+  {s:2001,e:2012,label:"工商管理学院(2001组建)",c:"scu"},
+  {s:2012,e:2026,label:"商学院(2012更名)",c:"scu"}]},
+{ g:"lib", name:"法学院", blocks:[
+  {s:1903,e:1905,label:"课吏馆/仕学馆",c:"other"},
+  {s:1905,e:1927,label:"四川法政学堂→法政专门",c:"other"},
+  {s:1927,e:1931,label:"公立川大法政学院",c:"other"},
+  {s:1931,e:1952,label:"国立川大法学院(法律/政治/经济)",c:"scu"},
+  {s:1952,e:1953,label:"并入西南革大→西南政法学院",c:"other"},
+  {s:1953,e:1984,label:"法学教育中断期",c:"scu",ghost:true},
+  {s:1984,e:1994,label:"法律系(1984恢复)",c:"scu"},
+  {s:1994,e:1998,label:"川联大法学院",c:"scul"},
+  {s:1998,e:2026,label:"法学院",c:"scu"}]},
+{ g:"lib", name:"国际关系学院", blocks:[
+  {s:1964,e:1978,label:"印度研究室(1964)",c:"scu"},
+  {s:1978,e:2001,label:"南亚研究所(1978)",c:"scu"},
+  {s:2001,e:2016,label:"政治学院国际政治系等平台",c:"scu"},
+  {s:2016,e:2026,label:"国际关系学院(2016.9成立)",c:"scu"}]},
+{ g:"lib", name:"马克思主义学院", blocks:[
+  {s:1952,e:2001,label:"马列教研室/马列部·思政部",c:"scu"},
+  {s:2001,e:2016,label:"政治学院(2001,并华西人文社科部)",c:"scu"},
+  {s:2016,e:2026,label:"马克思主义学院(2016更名)",c:"scu"}]},
+{ g:"lib", name:"公共管理学院", blocks:[
+  {s:1959,e:2001,label:"孕育期:哲学(1959)/档案(1981)/社会学(1984)/行政管理(1985)",c:"scu"},
+  {s:2001,e:2026,label:"公共管理学院(2001.6组建)",c:"scu"}]},
+{ g:"lib", name:"艺术学院", blocks:[
+  {s:1896,e:1994,label:"艺术教育源流(20世纪初设美术音乐类科)",c:"scu"},
+  {s:1994,e:1998,label:"文化艺术学院→艺术学院(川联大首个新院)",c:"scul"},
+  {s:1998,e:2001,label:"哲学与艺术学院",c:"scu"},
+  {s:2001,e:2026,label:"艺术学院(2001恢复建制)",c:"scu"}]},
+{ g:"lib", name:"体育学院", blocks:[
+  {s:1950,e:1994,label:"体育教研部",c:"scu"},
+  {s:1994,e:1998,label:"川联大体育教研部",c:"scul"},
+  {s:1998,e:2003,label:"体育教研部(2000并华西体育部)",c:"scu"},
+  {s:2003,e:2026,label:"体育学院(2003成立)",c:"scu"}]},
+// ===== 实体研究院所 =====
+{ g:"res", name:"原子核科学技术研究所", blocks:[
+  {s:1972,e:1980,label:"七二〇工程立项筹建",c:"scu",ghost:true},
+  {s:1980,e:2026,label:"原子核科学技术研究所(720所)",c:"scu"}]},
+{ g:"res", name:"原子与分子物理研究所", blocks:[
+  {s:1984,e:1994,label:"芶清泉于成都科大创建",c:"cdut"},
+  {s:1994,e:1998,label:"四川联合大学时期",c:"scul"},
+  {s:1998,e:2026,label:"原子与分子物理研究所",c:"scu"}]},
+{ g:"res", name:"道教与宗教文化研究所", blocks:[
+  {s:1980,e:1999,label:"宗教学研究所(卿希泰首任所长)",c:"scu"},
+  {s:1999,e:2026,label:"道教与宗教文化研究所(教育部重点基地)",c:"scu"}]},
+{ g:"res", name:"古籍整理研究所", blocks:[
+  {s:1983,e:2026,label:"古籍整理研究所(教育部首批批准)",c:"scu"}]},
+{ g:"res", name:"中国藏学研究所", blocks:[
+  {s:1999,e:2026,label:"中国藏学研究所(由西藏考古与历史文化研究中心改组)",c:"scu"}]}
+];
+
+// 重大事件注记（渲染为图表下方列表）
+const EVENTS = [
+  "<b>1952-1953 院系调整流出：</b>法律/政治系→西南革大（1953组建西南政法学院）；经济系科→四川财经学院（今西南财经大学）；航空系调出；化工线糖品物工学调华南工学院、造纸工学并入天津大学",
+  "<b>1950-1952 院系调整流入：</b>重庆大学/川北大学/华西协合大学化学系并入化学系；重大/华西数学师资并入数学系；华西生物系并入生物系；十校化工系科合组四川化学工业学院",
+  "<b>1994：</b>四川大学+成都科技大学合并为四川联合大学；1998年更名四川大学；<b>2000：</b>华西医科大学并入组建新四川大学",
+  "<b>2000-2001 组建潮：</b>华西基础化学教研室→化学学院；华西外语系→外国语学院；华西人文社科部→政治学院（今马克思主义学院）；基础医学院+法医学院→华西基础医学与法医学院；材料/高分子/建环/工商管理等学院组建",
+  "<b>实体研究院所：</b>原子核科学技术研究所/720所（1980，教育部与二机部批准，前身1972七二〇工程）；原子与分子物理研究所（1984，芶清泉创建于成都科大）；宗教学研究所（1980，卿希泰，高校首个）→道教与宗教文化研究所（1999更名）；古籍整理研究所（1983，教育部首批）；中国藏学研究所（1999）",
+  "<b>2024-2026：</b>文学与新闻学院分设为文学院、新闻传播与出版学院；古典学系成立（2025.3）；人工智能学院揭牌（2026.1）"
+];
+// ============ 渲染区（v0.4 极简网格版·对齐参考图） ============
+const YEAR0 = 1896, YEAR1 = 2026;
+const COL_W = 22, ROW_H = 8, LEFT_W = 50, TOP_PAD = 10;
+const GROUP_FILL = { base:"#f2f2f2", sci:"#EAF3FB", eng:"#FDF3E3", med:"#FBEAEE", lib:"#F1EDF9", res:"#EAF6F0" };
+
+// 合并/拆分事件标记：t=并(并入/合组) 分(分出/调出)；渲染为事件年分界处的圆点
+const EVMARKS = [
+  {row:"数学学院",y:1952,t:"并",note:"重庆大学/华西数学师资并入"},
+  {row:"物理学院",y:2000,t:"并",note:"华西物理力量并入"},
+  {row:"化学学院",y:1952,t:"并",note:"重庆大学/川北大学/华西化学系并入"},
+  {row:"化学学院",y:2000,t:"并",note:"华西基础化学教研室并入"},
+  {row:"生命科学学院",y:1952,t:"并",note:"华西协合大学生物系并入"},
+  {row:"化学工程学院",y:1952,t:"并",note:"十校化工系科合组四川化学工业学院"},
+  {row:"轻工科学与工程学院",y:1952,t:"并",note:"燕京大学制革学系内迁（张铨）"},
+  {row:"外国语学院",y:1994,t:"并",note:"成都科大外语系并入"},
+  {row:"外国语学院",y:2000,t:"并",note:"华西医大外语教研室并入"},
+  {row:"电气工程学院",y:1998,t:"并",note:"电力/自动化/应电三系合建学院"},
+  {row:"水利水电学院",y:1993,t:"分",note:"土木工程专业分出"},
+  {row:"空天科学与工程学院",y:1952,t:"分",note:"航空系整体调出"},
+  {row:"法学院",y:1952,t:"分",note:"法律/政治系调出，组建西南政法学院"},
+  {row:"经济学院",y:1952,t:"分",note:"经济系科调四川财经学院（今西南财大）"},
+  {row:"新闻传播与出版学院",y:1998,t:"并",note:"并入文学与新闻学院"},
+  {row:"文学院（中文系）",y:2024,t:"分",note:"文学与新闻学院分设为文学院、新闻传播与出版学院"},
+  {row:"马克思主义学院",y:2001,t:"并",note:"并华西医科大学人文社科部"},
+  {row:"华西基础医学与法医学院",y:2001,t:"并",note:"基础医学院+法医学院合并组建"}
+];
+
+const COLS = ROWS.filter(r => r.g !== "base"); // 三条校本部基线用颜色体现，不占列
+const NAME_H = Math.max.apply(null, COLS.map(r => r.name.length)) * 13 + 10;
+const GROUP_H = 24;
+const GRID_W = COLS.length * COL_W;
+const GRID_H = (YEAR1 - YEAR0) * ROW_H;
+const GRID_X = LEFT_W, GRID_Y = TOP_PAD + GROUP_H + NAME_H;
+const W = GRID_X + GRID_W + 60;
+const H = GRID_Y + GRID_H + 40;
+
+const svg = document.getElementById("chart");
+svg.setAttribute("width", W); svg.setAttribute("height", H);
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  return e;
+}
+const yPx = y => GRID_Y + (y - YEAR0) * ROW_H;
+
+// 1) 学部色带表头（同列分组的 Excel 大标题）
+const groupBounds = [];
+let gi = 0;
+while (gi < COLS.length) {
+  let gj = gi; while (gj < COLS.length && COLS[gj].g === COLS[gi].g) gj++;
+  groupBounds.push([gi, gj]);
+  const gx = GRID_X + gi * COL_W, gw = (gj - gi) * COL_W;
+  svg.appendChild(el("rect", { x:gx, y:TOP_PAD, width:gw, height:GROUP_H,
+    fill:GROUP_FILL[COLS[gi].g] || "#eeeeee" }));
+  svg.appendChild(el("text", { x:gx+gw/2, y:TOP_PAD+GROUP_H/2+4.5, "text-anchor":"middle",
+    "font-size":12.5, "font-weight":600, fill:"#333" }, GROUPS[COLS[gi].g]));
+  gi = gj;
+}
+
+// 2) 列底（白色，未建校年份为白）；院名文字移到色块之后绘制，保证不被遮挡
+COLS.forEach((row, ci) => {
+  svg.appendChild(el("rect", { x:GRID_X+ci*COL_W, y:GRID_Y, width:COL_W, height:GRID_H, fill:"#ffffff" }));
+});
+
+// 3) 年份行：每行一年，同参考图左侧逐年标号
+for (let y = YEAR0; y <= YEAR1; y++) {
+  const major = (y % 10 === 0);
+  svg.appendChild(el("text", { x:LEFT_W-6, y:yPx(y)+ROW_H-1, "text-anchor":"end",
+    "font-size": major?8:6.8, fill: major?"#333":"#a0a0a0", "font-weight": major?700:400 }, String(y)));
+}
+
+// 4) 色块：每学院每年一格，颜色 = 当时所属母体。
+//    早于基线(1896)的源头段（如 尊经书院1875）以淡色(28%)显示在表头区，院名文字在其上层绘制
+const gridLayer = el("g");
+
+COLS.forEach((row, ci) => {
+  const x = GRID_X + ci * COL_W;
+  row.blocks.forEach(b => {
+    const yTop = yPx(b.s), yBot = yPx(b.e);
+    const cFill = COLORS[b.c].c;
+    const tip = row.name + "：" + b.label + "（" + b.s + "—" + b.e + "）" + (b.ghost ? "〔筹建/中断〕" : "");
+    if (yTop < GRID_Y) { // 源头段早于基线：淡色显示，避免盖住表头
+      const pre = el("rect", { x:x, y:yTop, width:COL_W, height:GRID_Y - yTop,
+        fill:cFill, opacity:0.28 });
+      pre.appendChild(el("title", {}, tip));
+      gridLayer.appendChild(pre);
+    }
+    const mainTop = Math.max(yTop, GRID_Y);
+    // 时期统一设色：1994-1998 四川联合大学窗口内，原川大(scu)块统一显示为川联大紫色（华西线除外，其时仍为独立学校）
+    const parts = [];
+    if (b.c === "scu") {
+      const a = Math.max(b.s, YEAR0), z = b.e;
+      if (Math.min(z,1994) > a) parts.push({s:a, e:Math.min(z,1994), c:"scu"});
+      if (Math.min(z,1998) > Math.max(a,1994)) parts.push({s:Math.max(a,1994), e:Math.min(z,1998), c:"scul"});
+      if (z > Math.max(a,1998)) parts.push({s:Math.max(a,1998), e:z, c:"scu"});
+    } else {
+      parts.push({s:Math.max(b.s, YEAR0), e:b.e, c:b.c});
+    }
+    parts.forEach(p => {
+      const py = Math.max(yPx(p.s), GRID_Y), py2 = Math.min(yPx(p.e), GRID_Y + GRID_H);
+      if (py2 <= py) return;
+      const rect = el("rect", { x:x, y:py, width:COL_W, height:py2 - py,
+        fill:COLORS[p.c].c, opacity: b.ghost ? 0.4 : 1 });
+      rect.appendChild(el("title", {}, tip));
+      gridLayer.appendChild(rect);
+    });
+    // 块内竖排名称：常规字重、去括号短标，按网格内可见范围居中，放得下才显示
+    const disp = b.label.replace(/（[^）]*）|\([^)]*\)/g, "").trim();
+    const step = 11.5;
+    const vTop = Math.max(yTop, GRID_Y), vBot = Math.min(yBot, GRID_Y + GRID_H);
+    if (disp.length >= 2 && disp.length * step <= (vBot - vTop) - 4) {
+      const y0 = (vTop + vBot)/2 - (disp.length-1)*step/2 + 3.5;
+      [...disp].forEach((ch, i) => gridLayer.appendChild(el("text", {
+        x:x+COL_W/2, y:y0+i*step, "text-anchor":"middle", "font-size":9.5,
+        fill:"#262626", "pointer-events":"none" }, ch)));
+    }
+  });
+});
+svg.appendChild(gridLayer);
+
+// 4.5) 学院名竖排表头（绘制在色块之上，浅色源头段不会遮挡文字）
+COLS.forEach((row, ci) => {
+  const cx = GRID_X + ci * COL_W + COL_W / 2;
+  [...row.name].forEach((ch, i) => {
+    svg.appendChild(el("text", { x:cx, y:TOP_PAD+GROUP_H+16+i*13, "text-anchor":"middle",
+      "font-size":12, "font-weight":500, fill:"#222" }, ch));
+  });
+});
+
+// 5) 合并/拆分标记：事件年分界处圆点（红=并入/合组，绿=分出/调出），悬停看详情
+COLS.forEach((row, ci) => {
+  const x = GRID_X + ci * COL_W;
+  EVMARKS.forEach(m => {
+    if (m.row !== row.name) return;
+    const b = row.blocks.find(bb => m.y >= bb.s && m.y < bb.e);
+    if (!b) return;
+    const cy = yPx(m.y);
+    const dot = el("circle", { cx:x+COL_W/2, cy:cy, r:5.5, fill: m.t==="并" ? "#c7443a" : "#2f8f5b",
+      stroke:"#fff", "stroke-width":1 });
+    dot.appendChild(el("title", {}, row.name + " " + m.y + "年 · " + (m.t==="并"?"并入/合组":"分出/调出") + "：" + (m.note||"")));
+    svg.appendChild(dot);
+    svg.appendChild(el("text", { x:x+COL_W/2, y:cy+2.7, "text-anchor":"middle",
+      "font-size":7.5, "font-weight":700, fill:"#fff", "pointer-events":"none" }, m.t));
+  });
+});
+
+// 6) 参考图式极简处理：无分隔粗线、无红虚线、无外框 —— 合并/拆分由并分圆点与配色变化体现
+
+// 7) 图例与事件注记
+const lg = document.getElementById("legend");
+for (const k in COLORS) {
+  const sp = document.createElement("span");
+  sp.innerHTML = `<i style="background:${COLORS[k].c}"></i>${COLORS[k].name}`;
+  lg.appendChild(sp);
+}
+const mk1 = document.createElement("span");
+mk1.innerHTML = `<i class="mk" style="background:#c7443a">并</i>并入/合组`;
+lg.appendChild(mk1);
+const mk2 = document.createElement("span");
+mk2.innerHTML = `<i class="mk" style="background:#2f8f5b">分</i>分出/调出`;
+lg.appendChild(mk2);
+const ev = document.getElementById("events");
+ev.innerHTML = "关键事件注记：" + EVENTS.map(t => `<li>${t}</li>`).join("");
+</script>
+</body>
+</html>
