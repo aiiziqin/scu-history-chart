@@ -4,7 +4,11 @@
 
 ## 在线查看
 
-开启 GitHub Pages 后访问：`https://aiiziqin.github.io/scu-history-chart/`
+👉 **[点击这里在线浏览图表](https://aiiziqin.github.io/scu-history-chart/)**
+
+直达地址：https://aiiziqin.github.io/scu-history-chart/
+
+也可以直接下载本仓库中的 `index.html`，双击即可在本地浏览器打开（单文件、无外部依赖）。
 
 ## 看图说明
 
