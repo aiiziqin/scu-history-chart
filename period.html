@@ -64,7 +64,7 @@ if (!row || pi < 0 || !row.blocks[pi]) {
     if (d.achievements && d.achievements.length) html += "<h2>主要成就</h2><ul>" + d.achievements.map(t => "<li>" + esc(t) + "</li>").join("") + "</ul>";
     if (d.people && d.people.length) html += "<h2>代表人物</h2><ul>" + d.people.map(t => {
     const m = t.match(/^[^（—-]+/); const nm = m ? m[0].trim() : t; const rest = t.slice(nm.length);
-    const nmHtml = PEOPLE_LINKS[nm] ? '<a href="https://www.zgbk.com/ecph/words?SiteID=1&Name=' + encodeURIComponent(nm) + '" target="_blank" rel="noopener" title="查看中国大百科全书词条" style="color:#1a4e8a;border-bottom:1px dotted #1a4e8a;text-decoration:none;">' + esc(nm) + '</a>' : esc(nm);
+    const nmHtml = PEOPLE_LINKS[nm] ? '<a href="' + (PEOPLE_LINKS[nm] === 1 ? 'https://baike.baidu.com/item/' + encodeURIComponent(nm) : PEOPLE_LINKS[nm]) + '" target="_blank" rel="noopener" title="查看百科词条（内容仅供参考）" style="color:#1a4e8a;border-bottom:1px dotted #1a4e8a;text-decoration:none;">' + esc(nm) + '</a>' : esc(nm);
     return "<li>" + nmHtml + esc(rest) + "</li>";
   }).join("") + "</ul>";
     if (d.sources && d.sources.length) html += "<h2>资料来源</h2><ol class='src'>" + d.sources.map(t => "<li>" + esc(t) + "</li>").join("") + "</ol>";
