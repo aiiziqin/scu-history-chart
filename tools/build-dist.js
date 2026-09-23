@@ -10,6 +10,8 @@ const VERSION = process.argv[2] ||
   (fs.readFileSync(path.join(ROOT, 'CHANGELOG.md'), 'utf8').match(/## \[(\d+\.\d+)\]/) || [, 'dev'])[1];
 const PAGES = ['index.html', 'college.html', 'period.html', 'flows.html'];
 const data = fs.readFileSync(path.join(ROOT, 'data.js'), 'utf8');
+// 页面里的第三方统计脚本（不蒜子）在单文件版中保留一份，离线打开时其自身会静默失败
+const counterTag = (fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').match(/<script[^>]*busuanzi[^>]*><\/script>/) || [''])[0];
 
 // —— 链接与查询参数改写：把跨文件跳转改成 hash 路由 ——
 function rewriteLinks(s) {
@@ -119,6 +121,7 @@ const single = [
   'window.addEventListener("hashchange", render);',
   'render();',
   '</script>',
+  counterTag,
   '</body>',
   '</html>',
   ''

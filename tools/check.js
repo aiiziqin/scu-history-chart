@@ -81,7 +81,12 @@ if (fs.existsSync(OUT)) {
     .sort((a, b) => b.t - a.t)[0].f;
   const sh = fs.readFileSync(path.join(OUT, sf), 'utf8');
   const scripts = [...sh.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
-  check('单文件版无外部 js 依赖', scripts.length === 2 && !/src="[^"]*\.js"/.test(sh), sf);
+  check('单文件版无本地 js 依赖（仅允许外链统计脚本）', scripts.length === 2 && !/src="(?!https?:)[^"]*\.js"/.test(sh), sf);
+  check('四页含右上角顶栏（浏览量 + 项目地址）', ['index.html', 'college.html', 'period.html', 'flows.html'].every(p => {
+    const h = fs.readFileSync(path.join(ROOT, p), 'utf8');
+    return h.indexOf('class="topbar"') >= 0 && h.indexOf('busuanzi_value_site_pv') >= 0 &&
+      h.indexOf('github.com/aiiziqin/scu-history-chart') >= 0;
+  }));
   const pairs = new Set(D.FLOWS.map(f => f.y + '|' + f.k)).size;
   const routes = [['', 'index'], ['#/index', 'index'],
     ['#/college?c=' + encodeURIComponent('空天科学与工程学院'), 'college'],

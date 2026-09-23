@@ -36,9 +36,26 @@
   .todo { color:#a06a00; font-size:11.5px; margin-left:2px; }
   .foot { color:#888; font-size:12px; line-height:1.85; margin-top:22px; }
   .foot a { color:#1a4e8a; text-decoration:none; }
+
+  /* ===== 顶栏：浏览量 + 项目地址（右上角） ===== */
+  .topbar { position: fixed; top: 10px; right: 14px; z-index: 999; display: flex; gap: 8px; align-items: center;
+    font-size: 12px; color: #666; background: rgba(255,255,255,.94); border: 1px solid #e5e5e5;
+    border-radius: 14px; padding: 4px 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); max-width: 70vw; }
+  .topbar b { color: #1a4e8a; font-weight: 600; }
+  .topbar a { color: #1a4e8a; text-decoration: none; }
+  .topbar a:hover { color: #c7443a; text-decoration: underline; }
+  .topbar .sep { color: #d5d5d5; }
+  .topbar .tb-url { color: #888; }
+  @media (max-width: 760px) { .topbar { font-size: 11px; padding: 3px 9px; max-width: 92vw; } .topbar .tb-url { display: none; } }
 </style>
 </head>
 <body>
+<div class="topbar" id="topbar">
+  <span id="pvBox">浏览量 <b id="busuanzi_value_site_pv">–</b> 次（本站）／ <b id="busuanzi_value_page_pv">–</b> 次（本页）</span>
+  <span class="sep">·</span>
+  <a href="https://github.com/aiiziqin/scu-history-chart" target="_blank" rel="noopener" title="项目仓库：https://github.com/aiiziqin/scu-history-chart">项目地址 <span class="tb-url">github.com/aiiziqin/scu-history-chart</span></a>
+</div>
+
 <div class="wrap">
   <div class="crumb"><a href="index.html">← 返回全景图</a>　<span id="crumbName"></span></div>
   <h1 id="title">跨院系 · 校际师资与系科流向清单</h1>
@@ -4820,6 +4837,16 @@ function renderList() {
 }
 renderChips();
 renderList();
+</script>
+<script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<script>
+// 浏览量统计不可用时（离线打开/脚本被拦截）隐藏计数，避免长期显示“–”
+setTimeout(function () {
+  var bad = function (id) { var el = document.getElementById(id); return !el || !el.textContent || el.textContent === '–'; };
+  if (bad('busuanzi_value_site_pv') && bad('busuanzi_value_page_pv')) {
+    var box = document.getElementById('pvBox'); if (box) box.style.display = 'none';
+  }
+}, 4000);
 </script>
 </body>
 </html>
