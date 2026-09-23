@@ -21,6 +21,8 @@
   .nav a { color:#1a4e8a; text-decoration:none; margin-right:16px; }
   .nav a:hover { color:#c7443a; text-decoration:underline; }
   .todo { color:#999; font-size:13px; }
+  .src { margin:4px 0; padding-left:22px; }
+  .src li { font-size:13px; color:#555; line-height:1.7; margin-bottom:2px; }
 </style>
 </head>
 <body>
@@ -61,6 +63,7 @@ if (!row || pi < 0 || !row.blocks[pi]) {
     if (d.events && d.events.length) html += "<h2>大事记</h2><ul>" + d.events.map(t => "<li>" + esc(t) + "</li>").join("") + "</ul>";
     if (d.achievements && d.achievements.length) html += "<h2>主要成就</h2><ul>" + d.achievements.map(t => "<li>" + esc(t) + "</li>").join("") + "</ul>";
     if (d.people && d.people.length) html += "<h2>代表人物</h2><ul>" + d.people.map(t => "<li>" + esc(t) + "</li>").join("") + "</ul>";
+    if (d.sources && d.sources.length) html += "<h2>资料来源</h2><ol class='src'>" + d.sources.map(t => "<li>" + esc(t) + "</li>").join("") + "</ol>";
   } else {
     html += '<p class="todo">该时期的详细事件与成就资料正在补充中。以下为图数据基本信息：</p>';
     html += "<ul><li>时期名称：" + esc(b.label) + "</li><li>起止年份：" + b.s + "—" + b.e
