@@ -48,14 +48,15 @@ if (!row || pi < 0 || !row.blocks[pi]) {
 } else {
   const b = row.blocks[pi];
   const key = row.name + "|" + b.s;
+  const eShow = e => e >= 2027 ? "至今" : e;   // 块的 e = 2027 表示“延续至今”
   const d = (typeof DETAILS !== "undefined") ? DETAILS[key] : null;
   const dur = b.e - b.s;
-  document.title = row.name + " · " + b.label + "（" + b.s + "—" + b.e + "）";
+  document.title = row.name + " · " + b.label + "（" + b.s + "—" + eShow(b.e) + "）";
   crumb.innerHTML = '<a href="index.html">全景图</a>　/　<a href="' + cUrl(row.name) + '">' + esc(row.name) + "</a>　/　" + esc(b.label);
 
   let html = "<h1>" + esc(row.name) + " · " + esc(b.label) + "</h1>";
   html += '<div class="meta"><span class="chip" style="background:' + COLORS[b.c].c + '"></span>'
-    + "所属母体：" + esc(COLORS[b.c].name) + "　·　起止：<b>" + b.s + "—" + b.e + "</b>（约 " + dur + " 年）"
+    + "所属母体：" + esc(COLORS[b.c].name) + "　·　起止：<b>" + b.s + "—" + eShow(b.e) + "</b>（约 " + dur + " 年）"
     + (b.ghost ? '<span class="ghost">注：此为筹建/中断期</span>' : "") + "</div>";
 
   if (d) {
@@ -86,11 +87,11 @@ if (!row || pi < 0 || !row.blocks[pi]) {
   html += '<div class="nav">';
   if (pi > 0) {
     const pb = row.blocks[pi - 1];
-    html += '<a href="period.html?c=' + encodeURIComponent(row.name) + "&p=" + (pi - 1) + '">← 上一时期：' + esc(pb.label) + "（" + pb.s + "—" + pb.e + "）</a>";
+    html += '<a href="period.html?c=' + encodeURIComponent(row.name) + "&p=" + (pi - 1) + '">← 上一时期：' + esc(pb.label) + "（" + pb.s + "—" + eShow(pb.e) + "）</a>";
   }
   if (pi < row.blocks.length - 1) {
     const nb = row.blocks[pi + 1];
-    html += '<a href="period.html?c=' + encodeURIComponent(row.name) + "&p=" + (pi + 1) + '">下一时期：' + esc(nb.label) + "（" + nb.s + "—" + nb.e + "）→</a>";
+    html += '<a href="period.html?c=' + encodeURIComponent(row.name) + "&p=" + (pi + 1) + '">下一时期：' + esc(nb.label) + "（" + nb.s + "—" + eShow(nb.e) + "）→</a>";
   }
   html += '<a href="' + cUrl(row.name) + '" style="float:right">返回「' + esc(row.name) + '」学院页</a></div>';
   card.innerHTML = html;

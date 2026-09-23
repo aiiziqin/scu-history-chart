@@ -48,16 +48,17 @@ if (!row) {
   document.getElementById("subtitle").textContent =
     "所属分组：" + GROUPS[row.g] + "　·　共 " + row.blocks.length + " 个历史时期　·　点击任意时期条目查看详细事件与成就";
 
-  const YEAR0 = 1896, YEAR1 = 2026;
+  const YEAR0 = 1896, YEAR1 = 2027;   // YEAR1 = 末行年份 + 1：行覆盖 1896—2026
   const ROW_H = 12, LEFT_W = 56, BAR_X = 70, BAR_W = 170, TOP_PAD = 14;
   const GRID_H = (YEAR1 - YEAR0) * ROW_H;
   const GRID_Y = TOP_PAD + 8;
   const W = BAR_X + BAR_W + 460, H = GRID_Y + GRID_H + 30;
   svg.setAttribute("width", W); svg.setAttribute("height", H);
   const yPx = y => GRID_Y + (y - YEAR0) * ROW_H;
+  const eShow = e => e >= YEAR1 ? "至今" : e;
 
   // 年份轴
-  for (let y = YEAR0; y <= YEAR1; y++) {
+  for (let y = YEAR0; y < YEAR1; y++) {
     const major = (y % 10 === 0);
     svg.appendChild(el("text", { x:LEFT_W-6, y:yPx(y)+ROW_H-2, "text-anchor":"end",
       "font-size": major?10:8, fill: major?"#333":"#b0b0b0" }, y));
@@ -70,7 +71,7 @@ if (!row) {
   // 时期色块
   row.blocks.forEach((b, bi) => {
     const cFill = COLORS[b.c].c;
-    const tip = row.name + "：" + b.label + "（" + b.s + "—" + b.e + "）";
+    const tip = row.name + "：" + b.label + "（" + b.s + "—" + eShow(b.e) + "）";
     const yTop = yPx(b.s), yBot = yPx(b.e);
     // 1896 之前的源头段（浅色，画在基线上方）
     if (b.s < YEAR0) {
@@ -106,7 +107,7 @@ if (!row) {
       const cy = (vTop + vBot) / 2;
       const t1 = el("text", { x:BAR_X+BAR_W+14, y:cy-2, "font-size":13, "font-weight":600, fill:"#222" }, b.label);
       const t2 = el("text", { x:BAR_X+BAR_W+14, y:cy+13, "font-size":11, fill:"#888" },
-        b.s + "—" + b.e + "　·　" + COLORS[b.c].name + (b.ghost ? "（筹建/中断期）" : "") + "　→ 详情");
+        b.s + "—" + eShow(b.e) + "　·　" + COLORS[b.c].name + (b.ghost ? "（筹建/中断期）" : "") + "　→ 详情");
       link.appendChild(t1); link.appendChild(t2);
       svg.appendChild(link);
     }

@@ -43,7 +43,7 @@
 
 
 // ============ 渲染区（v0.4 极简网格版·对齐参考图） ============
-const YEAR0 = 1896, YEAR1 = 2026;
+const YEAR0 = 1896, YEAR1 = 2027;   // YEAR1 = 末行年份 + 1：行覆盖 1896—2026（末行＝当年）
 const COL_W = 22, ROW_H = 8, LEFT_W = 50, TOP_PAD = 10;
 const GROUP_FILL = { base:"#f2f2f2", sci:"#EAF3FB", eng:"#FDF3E3", med:"#FBEAEE", lib:"#F1EDF9", res:"#EAF6F0" };
 
@@ -84,6 +84,7 @@ function el(tag, attrs, text) {
   return e;
 }
 const yPx = y => GRID_Y + (y - YEAR0) * ROW_H;
+const eShow = e => e >= YEAR1 ? "至今" : e;   // 块的 e 等于 YEAR1 表示“延续至今”
 
 // 1) 学部色带表头（同列分组的 Excel 大标题）
 const groupBounds = [];
@@ -105,7 +106,7 @@ COLS.forEach((row, ci) => {
 });
 
 // 3) 年份行：每行一年，同参考图左侧逐年标号
-for (let y = YEAR0; y <= YEAR1; y++) {
+for (let y = YEAR0; y < YEAR1; y++) {
   const major = (y % 10 === 0);
   svg.appendChild(el("text", { x:LEFT_W-6, y:yPx(y)+ROW_H-1, "text-anchor":"end",
     "font-size": major?8:6.8, fill: major?"#333":"#a0a0a0", "font-weight": major?700:400 }, String(y)));
@@ -120,7 +121,7 @@ COLS.forEach((row, ci) => {
   row.blocks.forEach((b, bi) => {
     const yTop = yPx(b.s), yBot = yPx(b.e);
     const cFill = COLORS[b.c].c;
-    const tip = row.name + "：" + b.label + "（" + b.s + "—" + b.e + "）" + (b.ghost ? "〔筹建/中断〕" : "");
+    const tip = row.name + "：" + b.label + "（" + b.s + "—" + eShow(b.e) + "）" + (b.ghost ? "〔筹建/中断〕" : "");
     if (yTop < GRID_Y) { // 源头段早于基线：淡色显示，避免盖住表头
       const pre = el("rect", { x:x, y:yTop, width:COL_W, height:GRID_Y - yTop,
         fill:cFill, opacity:0.28 });
