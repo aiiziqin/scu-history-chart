@@ -19,12 +19,21 @@
   svg a:hover text { fill:#c7443a; }
   svg a rect { cursor:pointer; }
   svg a:hover rect { filter:brightness(1.08); }
+  .flowbar { font-size:12px; color:#555; margin:8px 0 2px; }
+  .flowbar label { margin-right:14px; }
+  .flowbar input[type=checkbox] { vertical-align:-1px; }
+  .flowbar a { color:#1a4e8a; text-decoration:none; }
+  .flowbar a:hover { color:#c7443a; text-decoration:underline; }
 </style>
 </head>
 <body>
 <h1>四川大学院系历史沿革全景图（1896—2026 · 网格版）</h1>
-<div class="sub">每列 = 一个学院（表头竖排院名，按学部分组）；每行 = 一个年份（左侧逐年标注）；单元格颜色 = 该学院当年所属的母体大学；空白 = 尚未存在；半透明色块 = 筹建/中断期；表头区浅色 = 早于1896年基线的源头期（悬停查看）；<b>1994—1998</b> 四川联合大学时期，原川大各系所统一显示为紫色。色块分界处的 <b>并 / 分</b> 圆点标记该年的合并、拆分事件，悬停可查看详情。悬停色块可查看当时名称与起止年份；<b>点击学院名或色块</b>可进入该学院的子页面，学院页中再点击时期条目可查看该时期的详细事件与成就。</div>
+<div class="sub">每列 = 一个学院（表头竖排院名，按学部分组）；每行 = 一个年份（左侧逐年标注）；单元格颜色 = 该学院当年所属的母体大学；空白 = 尚未存在；半透明色块 = 筹建/中断期；表头区浅色 = 早于1896年基线的源头期（悬停查看）；<b>1994—1998</b> 四川联合大学时期，原川大各系所统一显示为紫色。色块分界处的 <b>并 / 分</b> 圆点标记该年的合并、拆分事件，悬停可查看详情。悬停色块可查看当时名称与起止年份；<b>点击学院名或色块</b>可进入该学院的子页面，学院页中再点击时期条目可查看该时期的详细事件与成就。<b>右栏圆标</b> = 跨院系·校际师资与系科流向（入/出/内/组），悬停看逐条、点击进入《流向清单》。</div>
 <div class="legend" id="legend"></div>
+<div class="flowbar">
+  <label><input type="checkbox" id="flowToggle" checked> 显示右栏「流向图层」<span id="flowCount"></span></label>
+  <a href="flows.html">打开《跨院系·校际师资与系科流向清单》 →</a>
+</div>
 <svg id="chart" xmlns="http://www.w3.org/2000/svg"></svg>
 <ul class="events" id="events"></ul>
 
@@ -46,8 +55,24 @@ const GROUP_H = 24;
 const GRID_W = COLS.length * COL_W;
 const GRID_H = (YEAR1 - YEAR0) * ROW_H;
 const GRID_X = LEFT_W, GRID_Y = TOP_PAD + GROUP_H + NAME_H;
-const W = GRID_X + GRID_W + 60;
+// 流向图层：把 FLOWS 按「年 + 类型」聚合，右栏每种类型一枚圆标；列宽按最拥挤的一年算，避免相邻年圆标重叠
+const FLOW_KINDS = ["入", "出", "内", "组"];
+const FLOW_COLOR = { "入":"#1a4e8a", "出":"#c0392b", "内":"#a06a00", "组":"#2f8f5b" };
+const FLOW_BY_YEAR = new Map();
+(typeof FLOWS !== "undefined" ? FLOWS : []).forEach(f => {
+  const fy = parseInt(f.y, 10);
+  if (!fy) return;
+  if (!FLOW_BY_YEAR.has(fy)) FLOW_BY_YEAR.set(fy, new Map());
+  const byKind = FLOW_BY_YEAR.get(fy);
+  if (!byKind.has(f.k)) byKind.set(f.k, []);
+  byKind.get(f.k).push(f);
+});
+const FLOW_SLOTS = Math.max(1, ...Array.from(FLOW_BY_YEAR.values(), m => m.size));
+const FLOW_X0 = GRID_X + GRID_W + 20;   // 右栏圆标起点
+const FLOW_W = FLOW_SLOTS * 9 + 14;     // 右栏预留宽度
+const W = FLOW_X0 + FLOW_W + 26;
 const H = GRID_Y + GRID_H + 40;
+
 
 const svg = document.getElementById("chart");
 svg.setAttribute("width", W); svg.setAttribute("height", H);
@@ -166,6 +191,38 @@ COLS.forEach((row, ci) => {
   });
 });
 
+// 5.5) 流向图层：跨院系·校际师资与系科流向（FLOWS）——右栏「年 × 类型」圆标，悬停看逐条、点击进入流向清单
+const FLOW_DESC = { "入":"调入川大体系", "出":"调出至他校/新建院校", "内":"校内院系之间的流向", "组":"由多校/多系合组" };
+svg.appendChild(el("text", { x:FLOW_X0 - 2, y:GRID_Y - 6, "font-size":10, fill:"#666" }, "跨院系流向"));
+const flowLayer = el("g");
+[...FLOW_BY_YEAR.keys()].sort((a, b) => a - b).forEach(y => {
+  const byKind = FLOW_BY_YEAR.get(y);
+  FLOW_KINDS.forEach((k, ki) => {
+    const list = byKind.get(k);
+    if (!list) return;
+    const cx = FLOW_X0 + ki * 9 + 3;
+    const cy = yPx(y) + ROW_H / 2;
+    const link = el("a", { href:"flows.html?y=" + y + "&k=" + encodeURIComponent(k) });
+    const dot = el("circle", { cx:cx, cy:cy, r:4.1, fill:FLOW_COLOR[k], stroke:"#fff", "stroke-width":0.9 });
+    dot.appendChild(el("title", {}, y + " 年 · " + k + "：" + FLOW_DESC[k] + "（" + list.length + " 条）\n"
+      + list.map(f => "· " + f.f + " → " + f.t).join("\n") + "\n点击查看《流向清单》"));
+    link.appendChild(dot);
+    link.appendChild(el("text", { x:cx, y:cy + 2.3, "text-anchor":"middle", "font-size":6, "font-weight":700,
+      fill:"#fff", "pointer-events":"none" }, k));
+    flowLayer.appendChild(link);
+  });
+});
+svg.appendChild(flowLayer);
+const flowToggle = document.getElementById("flowToggle");
+const flowCountEl = document.getElementById("flowCount");
+if (flowCountEl) flowCountEl.textContent = "（" + FLOW_BY_YEAR.size + " 个年份 · "
+  + (typeof FLOWS !== "undefined" ? FLOWS.length : 0) + " 条）";
+if (flowToggle) {
+  const syncFlow = () => { flowLayer.style.display = flowToggle.checked ? "" : "none"; };
+  flowToggle.addEventListener("change", syncFlow);
+  syncFlow();
+}
+
 // 6) 参考图式极简处理：无分隔粗线、无红虚线、无外框 —— 合并/拆分由并分圆点与配色变化体现
 
 // 7) 图例与事件注记
@@ -181,6 +238,9 @@ lg.appendChild(mk1);
 const mk2 = document.createElement("span");
 mk2.innerHTML = `<i class="mk" style="background:#2f8f5b">分</i>分出/调出`;
 lg.appendChild(mk2);
+const mk3 = document.createElement("span");
+mk3.innerHTML = `<i class="mk" style="background:#1a4e8a">入</i><i class="mk" style="background:#c0392b">出</i><i class="mk" style="background:#a06a00">内</i><i class="mk" style="background:#2f8f5b">组</i>右栏圆标＝跨院系·校际师资与系科流向（悬停查看，点击看清单）`;
+lg.appendChild(mk3);
 const ev = document.getElementById("events");
 ev.innerHTML = "关键事件注记：" + EVENTS.map(t => `<li>${t}</li>`).join("");
 </script>
