@@ -177,6 +177,7 @@ if (process.argv.includes('--urls')) {
       } catch (e) { bad.push('ERR  ' + u); }
     }
     console.log('\n--urls：检查 ' + list.length + ' 个来源 URL，非 200 的有 ' + bad.length + ' 个');
+    console.log('      说明：202/403/412 多为站点反爬拦截（如 *.scu.edu.cn 子站、百度百科），浏览器可正常访问，不算死链；ERR 才需人工确认。');
     bad.forEach(b => console.log('      ' + b));
     console.log(fail ? 'RESULT: ' + fail + ' FAILED / ' + pass + ' passed' : 'RESULT: ALL ' + pass + ' CHECKS PASSED');
     process.exit(fail ? 1 : 0);
