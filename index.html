@@ -192,7 +192,7 @@ COLS.forEach((row, ci) => {
 });
 
 // 5.5) 流向图层：跨院系·校际师资与系科流向（FLOWS）——右栏「年 × 类型」圆标，悬停看逐条、点击进入流向清单
-const FLOW_DESC = { "入":"调入川大体系", "出":"调出至他校/新建院校", "内":"校内院系之间的流向", "组":"由多校/多系合组" };
+const FLOW_DESC = { "入":"调入川大体系", "出":"调出至他校/新建院校", "内":"校内院系之间的调整/分设", "组":"由多校/多系合组" };
 svg.appendChild(el("text", { x:FLOW_X0 - 2, y:GRID_Y - 6, "font-size":10, fill:"#666" }, "跨院系流向"));
 const flowLayer = el("g");
 [...FLOW_BY_YEAR.keys()].sort((a, b) => a - b).forEach(y => {

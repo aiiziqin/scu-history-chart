@@ -68,7 +68,7 @@
 <script>
 const q = new URLSearchParams(location.search);
 const K_ORDER = ["入", "出", "内", "组"];
-const K_DESC = { "入":"调入川大体系（含并入、调入）", "出":"调出至他校 / 用于新建院校", "内":"校内院系之间的流向", "组":"由多校 / 多系合组而成" };
+const K_DESC = { "入":"调入川大体系（含并入、调入）", "出":"调出至他校 / 用于新建院校", "内":"校内院系之间的调整（含校内分设）", "组":"由多校 / 多系合组而成" };
 const FLOW_LIST = (typeof FLOWS !== "undefined" ? FLOWS : []).slice()
   .sort((a, b) => (parseInt(a.y, 10) - parseInt(b.y, 10)) || (K_ORDER.indexOf(a.k) - K_ORDER.indexOf(b.k)));
 let curK = q.get("k") || "";
