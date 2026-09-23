@@ -23,6 +23,11 @@ check('FLOWS 字段完整', D.FLOWS.every(f => f.y && f.f && f.t && f.k && f.d),
 check('FLOWS 类型合法（入/出/内/组）', D.FLOWS.every(f => ['入', '出', '内', '组'].includes(f.k)));
 check('正文不含群友昵称/社群线索', !Object.values(D.DETAILS).some(d => /群友|鸣渊|社群线索/.test([d.summary, ...(d.events || []), ...(d.achievements || []), ...(d.people || [])].join(' '))) && !D.FLOWS.some(f => /群友|鸣渊|社群线索/.test(f.d)));
 check('PEOPLE_LINKS 值合法（1 或 URL）', Object.values(D.PEOPLE_LINKS).every(v => v === 1 || /^https?:\/\//.test(String(v))), Object.keys(D.PEOPLE_LINKS).length + ' 人');
+let gap = 0;
+D.ROWS.forEach(r => { const bs = r.blocks.slice().sort((a, b) => a.s - b.s); bs.forEach((b, i) => { if (i && bs[i - 1].e !== b.s) gap++; }); });
+check('泳道时间轴无断点/重叠', gap === 0, gap + ' 处');
+const not27 = D.ROWS.filter(r => r.g !== 'base' && r.blocks[r.blocks.length - 1].e !== 2027).map(r => r.name);
+check('所有列末段统一延伸到 2027（＝末行 2026，显示为“至今”）', not27.length === 0, not27.join(','));
 
 // ---------- 2) 页面内联脚本沙盒执行 ----------
 function stubEl(tag) {
@@ -181,9 +186,3 @@ if (process.argv.includes('--urls')) {
   console.log(fail ? 'RESULT: ' + fail + ' FAILED / ' + pass + ' passed' : 'RESULT: ALL ' + pass + ' CHECKS PASSED');
   process.exit(fail ? 1 : 0);
 }
-
-let gap = 0;
-D.ROWS.forEach(r => { const bs = r.blocks.slice().sort((a, b) => a.s - b.s); bs.forEach((b, i) => { if (i && bs[i - 1].e !== b.s) gap++; }); });
-check('泳道时间轴无断点/重叠', gap === 0, gap + ' 处');
-const not27 = D.ROWS.filter(r => r.g !== 'base' && r.blocks[r.blocks.length - 1].e !== 2027).map(r => r.name);
-check('所有列末段统一延伸到 2027（＝末行 2026，显示为“至今”）', not27.length === 0, not27.join(','));
