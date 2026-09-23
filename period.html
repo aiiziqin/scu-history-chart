@@ -62,7 +62,11 @@ if (!row || pi < 0 || !row.blocks[pi]) {
     if (d.summary) html += "<h2>概述</h2><p>" + esc(d.summary) + "</p>";
     if (d.events && d.events.length) html += "<h2>大事记</h2><ul>" + d.events.map(t => "<li>" + esc(t) + "</li>").join("") + "</ul>";
     if (d.achievements && d.achievements.length) html += "<h2>主要成就</h2><ul>" + d.achievements.map(t => "<li>" + esc(t) + "</li>").join("") + "</ul>";
-    if (d.people && d.people.length) html += "<h2>代表人物</h2><ul>" + d.people.map(t => "<li>" + esc(t) + "</li>").join("") + "</ul>";
+    if (d.people && d.people.length) html += "<h2>代表人物</h2><ul>" + d.people.map(t => {
+    const m = t.match(/^[^（—-]+/); const nm = m ? m[0].trim() : t; const rest = t.slice(nm.length);
+    const nmHtml = PEOPLE_LINKS[nm] ? '<a href="https://www.zgbk.com/ecph/words?SiteID=1&Name=' + encodeURIComponent(nm) + '" target="_blank" rel="noopener" title="查看中国大百科全书词条" style="color:#1a4e8a;border-bottom:1px dotted #1a4e8a;text-decoration:none;">' + esc(nm) + '</a>' : esc(nm);
+    return "<li>" + nmHtml + esc(rest) + "</li>";
+  }).join("") + "</ul>";
     if (d.sources && d.sources.length) html += "<h2>资料来源</h2><ol class='src'>" + d.sources.map(t => "<li>" + esc(t) + "</li>").join("") + "</ol>";
   } else {
     html += '<p class="todo">该时期的详细事件与成就资料正在补充中。以下为图数据基本信息：</p>';
