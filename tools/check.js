@@ -185,3 +185,5 @@ if (process.argv.includes('--urls')) {
 let gap = 0;
 D.ROWS.forEach(r => { const bs = r.blocks.slice().sort((a, b) => a.s - b.s); bs.forEach((b, i) => { if (i && bs[i - 1].e !== b.s) gap++; }); });
 check('泳道时间轴无断点/重叠', gap === 0, gap + ' 处');
+const not27 = D.ROWS.filter(r => r.g !== 'base' && r.blocks[r.blocks.length - 1].e !== 2027).map(r => r.name);
+check('所有列末段统一延伸到 2027（＝末行 2026，显示为“至今”）', not27.length === 0, not27.join(','));
