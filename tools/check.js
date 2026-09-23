@@ -113,19 +113,42 @@ if (fs.existsSync(OUT)) {
 });
 
 // ---------- 5) 可选：深度报告（--depth）----------
-// "空天水准"标杆（参照 空天科学与工程学院|2011）：大事记 ≥5、成就 ≥1 或 人物 ≥3、出处 ≥2
+// 标杆（宁缺毋滥版）：大事记 ≥3（且应含年份）、出处 ≥2、成就 ≥1 或 人物 ≥2
+// 同时给出「防注水」提示：无年份大事记、同列重复大事记、单期大事记 ≥10 条（可能过肥）
 if (process.argv.includes('--depth')) {
-  const bar = d => (d.events || []).length >= 5 && (d.sources || []).length >= 2 && ((d.achievements || []).length >= 1 || (d.people || []).length >= 3);
+  const bar = d => (d.events || []).length >= 3 && (d.sources || []).length >= 2 &&
+    ((d.achievements || []).length >= 1 || (d.people || []).length >= 2);
+  const noYear = [], dup = [], fat = [];
+  const norm = s => String(s).replace(/\s/g, '').slice(0, 14);
+  D.ROWS.filter(r => r.g !== 'base').forEach(r => {
+    const seen = new Map();
+    r.blocks.forEach(b => {
+      const k = r.name + '|' + b.s, d = D.DETAILS[k];
+      if (!d) return;
+      (d.events || []).forEach(e => {
+        if (!/\d{4}/.test(e)) noYear.push(k + ' → ' + e.slice(0, 24));
+        const n = norm(e);
+        if (seen.has(n)) dup.push(k + ' ≈ ' + seen.get(n) + '：' + e.slice(0, 20));
+        else seen.set(n, k);
+      });
+      if ((d.events || []).length >= 10) fat.push(k + '（' + d.events.length + ' 条）');
+    });
+  });
   const rows = D.ROWS.filter(r => r.g !== 'base').map(r => {
     const ks = r.blocks.map(b => r.name + '|' + b.s).filter(k => D.DETAILS[k]);
     const ok = ks.filter(k => bar(D.DETAILS[k])).length;
-    return { name: r.name, ok: ok, total: ks.length };
+    const ev = ks.reduce((a, k) => a + (D.DETAILS[k].events || []).length, 0);
+    return { name: r.name, ok: ok, total: ks.length, ev: ev };
   }).sort((a, b) => (a.ok / a.total) - (b.ok / b.total) || a.name.localeCompare(b.name));
   const okAll = rows.reduce((a, r) => a + r.ok, 0), totAll = rows.reduce((a, r) => a + r.total, 0);
-  console.log('\n=== 深度报告：达到「空天水准」的时期数（大事记≥5、成就≥1或人物≥3、出处≥2）===');
+  console.log('\n=== 深度报告（宁缺毋滥版）：大事记 ≥3、出处 ≥2、成就 ≥1 或 人物 ≥2 ===');
   console.log('总计 ' + okAll + '/' + totAll + ' 个时期达标（' + (100 * okAll / totAll).toFixed(0) + '%）');
-  rows.forEach(r => console.log('  ' + (r.ok === r.total ? '✔ ' : '  ') + r.name + '  ' + r.ok + '/' + r.total));
-  console.log('（未达标者：补大事记/成就/代表人物/出处，参照 空天科学与工程学院|2011 的写法）');
+  rows.forEach(r => console.log('  ' + (r.ok === r.total ? '✔ ' : '  ') + r.name + '  ' + r.ok + '/' + r.total + '（大事记 ' + r.ev + ' 条）'));
+  console.log('\n-- 防注水提示 --');
+  console.log('  无年份大事记：' + noYear.length + ' 条' + (noYear.length ? '，示例：' + noYear.slice(0, 3).join('；') : ''));
+  console.log('  同列内疑似重复大事记：' + dup.length + ' 条' + (dup.length ? '，示例：' + dup.slice(0, 3).join('；') : ''));
+  console.log('  单期大事记 ≥10 条（可能过肥，可精简）：' + (fat.length ? fat.join('、') : '无'));
+  console.log('  说明：标杆只是体检指标，**未达标 ≠ 需要注水**——史料确实只有 1-2 条时，宁缺毋滥，如实少写。');
 }
 
 // ---------- 6) 可选：来源 URL 在线检查（--urls）----------
