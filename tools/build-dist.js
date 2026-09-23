@@ -49,8 +49,10 @@ PAGES.forEach(p => {
 });
 
 
-// —— 1) 四文件自包含包：保留原文件名与互相链接，双击 index.html 即可离线使用 ——
+// —— 0) 清空输出目录，避免残留旧版本产物 ——
+fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
+
 PAGES.forEach(p => {
   const html = fs.readFileSync(path.join(ROOT, p), 'utf8');
   const inlined = html.replace(/<script src="data\.js"><\/script>/, '<script>\n' + data + '\n</script>');

@@ -13,7 +13,7 @@ const check = (name, ok, extra) => { ok ? pass++ : fail++; console.log((ok ? 'PA
 // ---------- 1) 数据完整性 ----------
 let periods = 0, covered = 0;
 D.ROWS.forEach(r => r.blocks.forEach(b => { periods++; if (D.DETAILS[r.name + '|' + b.s]) covered++; }));
-check('DETAILS 覆盖全部时期', covered === periods && periods === 218, covered + '/' + periods);
+check('DETAILS 覆盖全部时期', covered === periods, covered + '/' + periods + '（' + D.ROWS.filter(r => r.g !== 'base').length + ' 列）');
 const noSrc = Object.values(D.DETAILS).filter(d => !d.sources || !d.sources.length).length;
 check('DETAILS 每条都有 sources', noSrc === 0, noSrc + ' 条缺');
 check('DETAILS 每条都有 events', Object.values(D.DETAILS).every(d => d.events && d.events.length));
@@ -76,7 +76,9 @@ if (fs.existsSync(OUT)) {
     const h = fs.readFileSync(path.join(OUT, p), 'utf8');
     return h.indexOf('src="data.js"') < 0 && h.indexOf('const FLOWS') >= 0;
   }));
-  const sf = fs.readdirSync(OUT).find(f => /^单文件版/.test(f));
+  const sf = fs.readdirSync(OUT).filter(f => /^单文件版/.test(f))
+    .map(f => ({ f, t: fs.statSync(path.join(OUT, f)).mtimeMs }))
+    .sort((a, b) => b.t - a.t)[0].f;
   const sh = fs.readFileSync(path.join(OUT, sf), 'utf8');
   const scripts = [...sh.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
   check('单文件版无外部 js 依赖', scripts.length === 2 && !/src="[^"]*\.js"/.test(sh), sf);
@@ -110,7 +112,23 @@ if (fs.existsSync(OUT)) {
   check('HTML 标签配对：' + p, bad.length === 0, bad.join(','));
 });
 
-// ---------- 5) 可选：来源 URL 在线检查 ----------
+// ---------- 5) 可选：深度报告（--depth）----------
+// "空天水准"标杆（参照 空天科学与工程学院|2011）：大事记 ≥5、成就 ≥1 或 人物 ≥3、出处 ≥2
+if (process.argv.includes('--depth')) {
+  const bar = d => (d.events || []).length >= 5 && (d.sources || []).length >= 2 && ((d.achievements || []).length >= 1 || (d.people || []).length >= 3);
+  const rows = D.ROWS.filter(r => r.g !== 'base').map(r => {
+    const ks = r.blocks.map(b => r.name + '|' + b.s).filter(k => D.DETAILS[k]);
+    const ok = ks.filter(k => bar(D.DETAILS[k])).length;
+    return { name: r.name, ok: ok, total: ks.length };
+  }).sort((a, b) => (a.ok / a.total) - (b.ok / b.total) || a.name.localeCompare(b.name));
+  const okAll = rows.reduce((a, r) => a + r.ok, 0), totAll = rows.reduce((a, r) => a + r.total, 0);
+  console.log('\n=== 深度报告：达到「空天水准」的时期数（大事记≥5、成就≥1或人物≥3、出处≥2）===');
+  console.log('总计 ' + okAll + '/' + totAll + ' 个时期达标（' + (100 * okAll / totAll).toFixed(0) + '%）');
+  rows.forEach(r => console.log('  ' + (r.ok === r.total ? '✔ ' : '  ') + r.name + '  ' + r.ok + '/' + r.total));
+  console.log('（未达标者：补大事记/成就/代表人物/出处，参照 空天科学与工程学院|2011 的写法）');
+}
+
+// ---------- 6) 可选：来源 URL 在线检查（--urls）----------
 if (process.argv.includes('--urls')) {
   const urls = new Set();
   Object.values(D.DETAILS).forEach(d => (d.sources || []).forEach(s => { const m = String(s).match(/https?:\/\/[^\s"，。]+/); if (m) urls.add(m[0].replace(/\.$/, '')); }));
