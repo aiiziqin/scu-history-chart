@@ -25,6 +25,33 @@
   .flowbar a { color:#1a4e8a; text-decoration:none; }
   .flowbar a:hover { color:#c7443a; text-decoration:underline; }
 
+  /* ===== 页脚反馈表单：问题反馈 / 意见建议 ===== */
+  .feedback { max-width:1100px; margin:26px 0 10px; padding-top:14px; border-top:1px solid #e5e5e5; }
+  .feedback h2 { font-size:15px; margin:0 0 6px; }
+  .feedback .fb-sub { color:#666; font-size:12px; line-height:1.85; margin:0 0 10px; max-width:960px; }
+  .feedback .fb-sub b { color:#c0392b; }
+  .feedback .fb-sub a { color:#1a4e8a; text-decoration:none; }
+  .feedback .fb-sub a:hover { color:#c7443a; text-decoration:underline; }
+  .feedback .fb-form { background:#fafafa; border:1px solid #e5e5e5; border-radius:8px; padding:12px 14px; }
+  .feedback .fb-row { margin-bottom:10px; font-size:12.5px; color:#444; }
+  .feedback .fb-row > label { display:block; margin-bottom:4px; color:#555; font-size:12px; }
+  .feedback select, .feedback input[type=text], .feedback textarea { font-family:inherit; font-size:12.5px; color:#222;
+    border:1px solid #d8d8d8; border-radius:6px; padding:5px 8px; background:#fff; box-sizing:border-box; }
+  .feedback select { min-width:190px; }
+  .feedback input[type=text] { width:320px; max-width:100%; }
+  .feedback textarea { width:100%; min-height:96px; line-height:1.7; resize:vertical; }
+  .feedback .fb-cnt { color:#999; font-size:11.5px; margin-left:6px; }
+  .feedback .fb-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .feedback button { font-family:inherit; font-size:12.5px; padding:6px 14px; border-radius:14px; cursor:pointer;
+    border:1px solid #d8d8d8; background:#fff; color:#444; }
+  .feedback button:hover { border-color:#1a4e8a; color:#1a4e8a; }
+  .feedback button.primary { background:#1a4e8a; border-color:#1a4e8a; color:#fff; }
+  .feedback button.primary:hover { background:#c7443a; border-color:#c7443a; }
+  .feedback .fb-msg { font-size:12px; color:#888; margin-top:8px; line-height:1.8; }
+  .feedback .fb-msg.err { color:#c0392b; }
+  .feedback .fb-msg.ok { color:#2f8f5b; }
+  @media (max-width: 760px) { .feedback input[type=text] { width:100%; } }
+
   /* ===== 顶栏：浏览量 + 项目地址（右上角） ===== */
   .topbar { position: fixed; top: 10px; right: 14px; z-index: 999; display: flex; gap: 8px; align-items: center;
     font-size: 12px; color: #666; background: rgba(255,255,255,.94); border: 1px solid #e5e5e5;
@@ -53,6 +80,49 @@
 </div>
 <svg id="chart" xmlns="http://www.w3.org/2000/svg"></svg>
 <ul class="events" id="events"></ul>
+
+<!-- ===== 页脚反馈表单：问题反馈 / 意见建议 =====
+     静态站（GitHub Pages）没有后端与数据库，所以表单不「上传本站」，而是落到外部归档处：
+     ① GitHub Issues（本项目采用，见下方脚本 REPO 常量）；② 邮件（脚本里 FB_MAIL 留空则隐藏按钮）；
+     ③ 复制内容（粘到 QQ 群 / 邮件）；草稿另存本机浏览器 localStorage，只用于「刷新不丢」。 -->
+<section class="feedback" id="feedback">
+  <h2>问题反馈 · 意见建议</h2>
+  <p class="fb-sub">发现年份、院名、沿革、流向等数据有误，或对图表呈现与功能有建议，都可以直接在下面写好提交。
+    <b>「提交到 GitHub Issues」不会向本站发送任何请求</b>：它把你填写的内容预填进本项目的
+    <a href="https://github.com/aiiziqin/scu-history-chart/issues" target="_blank" rel="noopener">新建 Issue 页</a>（公开、可检索、可追加评论，需 GitHub 账号），确认后点 Submit new issue 即完成归档；
+    没有账号或不便公开，可用「复制内容」贴到 QQ 群/邮件。「内容」为必填，其余可留空（联系方式留空即匿名）；填写中的草稿自动存在你本机浏览器，刷新或关页回来不会丢。</p>
+  <div class="fb-form">
+    <div class="fb-row">
+      <label for="fbKind">反馈类型</label>
+      <select id="fbKind">
+        <option>数据勘误（年份 / 院名 / 沿革 / 流向）</option>
+        <option>提供资料 · 补充出处</option>
+        <option>功能与呈现建议</option>
+        <option>使用问题（打不开 / 显示错乱等）</option>
+        <option>其他</option>
+      </select>
+    </div>
+    <div class="fb-row">
+      <label for="fbWhere">涉及页面 · 学院 · 年份（选填）</label>
+      <input type="text" id="fbWhere" placeholder="例：主页 › 化学工程学院 › 1952 年">
+    </div>
+    <div class="fb-row">
+      <label for="fbText">具体内容（必填）<span class="fb-cnt" id="fbCnt"></span></label>
+      <textarea id="fbText" placeholder="例：化学工程学院 1952 年一栏写作「四川化工学院」，据学院官网《历史沿革》应为「四川化学工业学院」，出处：https://…"></textarea>
+    </div>
+    <div class="fb-row">
+      <label for="fbContact">联系方式（选填）</label>
+      <input type="text" id="fbContact" placeholder="邮箱 / QQ / GitHub 用户名，便于回访核对">
+    </div>
+    <div class="fb-actions">
+      <button type="button" class="primary" id="fbSubmit">提交到 GitHub Issues</button>
+      <button type="button" id="fbMail">改用邮件发送</button>
+      <button type="button" id="fbCopy">复制内容</button>
+      <button type="button" id="fbClear">清空</button>
+    </div>
+    <div class="fb-msg" id="fbMsg"></div>
+  </div>
+</section>
 
 <script>
 // ===== 数据层（主图/学院页/时期页共用）=====
@@ -5099,6 +5169,149 @@ mk3.innerHTML = `<i class="mk" style="background:#1a4e8a">入</i><i class="mk" s
 lg.appendChild(mk3);
 const ev = document.getElementById("events");
 ev.innerHTML = "关键事件注记：" + EVENTS.map(t => `<li>${t}</li>`).join("");
+</script>
+<script>
+// ===== 页脚反馈表单：问题反馈 / 意见建议 =====
+// 静态站（GitHub Pages）没有后端与数据库，表单数据不「上传本站」，而是落到外部归档处：
+//   ① GitHub Issues（本项目采用）：把填写内容预填进本仓库的「新建 Issue」页，发表后公开、可检索、可评论；
+//   ② 邮件：把维护者邮箱填进下面的 FB_MAIL，按钮才会出现；
+//   ③ 复制内容：粘到 QQ 群 / 邮件 / 任意渠道；
+// 另有浏览器本地 localStorage 草稿（刷新不丢，不作为正式存档）。
+(function () {
+  var REPO = "https://github.com/aiiziqin/scu-history-chart";   // 反馈归档地：本仓库 Issues
+  var FB_MAIL = "";   // ← 想启用「邮件发送」按钮，在此填维护者邮箱（例 "your-name@example.com"）；留空则按钮自动隐藏
+  var DRAFT_KEY = "scu-history-chart/feedback-draft";
+  var MAX = 4000;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var kind = $("fbKind"), where = $("fbWhere"), text = $("fbText"), contact = $("fbContact"),
+      msg = $("fbMsg"), cnt = $("fbCnt"), submitBtn = $("fbSubmit"), mailBtn = $("fbMail"),
+      copyBtn = $("fbCopy"), clearBtn = $("fbClear");
+  if (!text) return;   // 页面里没有这块表单时直接跳过
+
+  function val(elm) { return elm && typeof elm.value === "string" ? elm.value.replace(/^\s+|\s+$/g, "") : ""; }
+  function setMsg(s, cls) { if (msg) { msg.textContent = s || ""; msg.className = "fb-msg" + (cls ? " " + cls : ""); } }
+  function ls() { try { return typeof localStorage !== "undefined" && localStorage ? localStorage : null; } catch (e) { return null; } }
+  function pageUrl() { try { return String(location.href || "") || REPO; } catch (e) { return REPO; } }
+  function uaStr() { try { return typeof navigator !== "undefined" && navigator.userAgent ? String(navigator.userAgent) : ""; } catch (e) { return ""; } }
+  function stamp() {
+    var d = new Date(), p = function (n) { return (n < 10 ? "0" : "") + n; };
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+  function shortKind(k) { return String(k || "其他").split("（")[0].split("(")[0].replace(/^\s+|\s+$/g, "") || "其他"; }
+
+  // 组装「标题 / 正文 / Issue 链接」——纯函数（不碰 DOM），供 tools/check.js 直接调用
+  function compose(o) {
+    var lines = ["**反馈类型**：" + (o.kind || "其他")];
+    if (o.where) lines.push("**涉及位置**：" + o.where);
+    lines.push("", String(o.text || ""));
+    if (o.contact) lines.push("", "**联系方式**：" + o.contact);
+    lines.push("", "---", "来源页面：" + (o.page || REPO),
+      "提交时间：" + (o.at || "") + (o.ua ? "；浏览器：" + o.ua : ""));
+    var body = lines.join("\n");
+    var title = "[反馈] " + shortKind(o.kind) + (o.where ? " · " + o.where : "");
+    if (title.length > 80) title = title.slice(0, 77) + "…";
+    return { title: title, body: body,
+      url: REPO + "/issues/new?title=" + encodeURIComponent(title) + "&body=" + encodeURIComponent(body) };
+  }
+
+  function collect() {
+    return { kind: val(kind) || "其他", where: val(where), text: val(text), contact: val(contact),
+      page: pageUrl(), ua: uaStr(), at: stamp() };
+  }
+
+  // —— 草稿：只存本机浏览器，刷新 / 关页回来内容不丢 ——
+  function saveDraft() {
+    var s = ls(); if (!s) return;
+    try { s.setItem(DRAFT_KEY, JSON.stringify(collect())); } catch (e) { /* 隐私模式或被禁用时静默忽略 */ }
+  }
+  function loadDraft() {
+    var s = ls(); if (!s) return;
+    var d = null;
+    try { d = JSON.parse(s.getItem(DRAFT_KEY) || "null"); } catch (e) { d = null; }
+    if (!d) return;
+    var KINDS = [];
+    try { for (var i = 0; kind && kind.options && i < kind.options.length; i++) KINDS.push(kind.options[i].value); } catch (e) {}
+    if (kind && d.kind && (KINDS.length === 0 || KINDS.indexOf(d.kind) >= 0)) kind.value = d.kind;
+    if (where && d.where) where.value = d.where;
+    if (text && d.text) text.value = d.text;
+    if (contact && d.contact) contact.value = d.contact;
+  }
+  function dropDraft() { var s = ls(); if (s) { try { s.removeItem(DRAFT_KEY); } catch (e) {} } }
+  function count() { if (cnt) cnt.textContent = "已写 " + val(text).length + " / " + MAX + " 字"; }
+
+  function needText() {
+    if (val(text)) return false;
+    setMsg("请先填写「具体内容」，再提交或复制。", "err");
+    try { if (text && text.focus) text.focus(); } catch (e) {}
+    return true;
+  }
+  function tooLong() {
+    var n = val(text).length;
+    if (n <= MAX) return false;
+    setMsg("内容 " + n + " 字，超出 " + MAX + " 字上限，请精简后再提交。", "err");
+    return true;
+  }
+  function openTab(url) {
+    var ok = false;
+    try { ok = typeof window !== "undefined" && typeof window.open === "function" && !!window.open(url, "_blank", "noopener"); } catch (e) { ok = false; }
+    if (!ok) { try { location.href = url; } catch (e) {} }   // 新标签页被拦截时退化为本页跳转
+    setMsg("已打开 GitHub「新建 Issue」页（内容已预填）：确认无误后点 Submit new issue 提交，反馈即归档在本仓库 Issues。新建 Issue 需要 GitHub 账号；没有账号可用「复制内容」或邮件。", "ok");
+  }
+  function onSubmit() { if (needText() || tooLong()) return; var p = compose(collect()); saveDraft(); openTab(p.url); }
+  function onMail() {
+    if (!FB_MAIL || needText() || tooLong()) return;
+    var p = compose(collect());
+    saveDraft();
+    try { location.href = "mailto:" + FB_MAIL + "?subject=" + encodeURIComponent(p.title) + "&body=" + encodeURIComponent(p.body); } catch (e) {}
+    setMsg("已唤起本机邮件客户端（收件人 " + FB_MAIL + "）；若没反应，可用「复制内容」手动发送。", "ok");
+  }
+  function fallbackCopy(s) {
+    var ok = false;
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = s; ta.setAttribute("readonly", "readonly");
+      ta.style.position = "fixed"; ta.style.left = "-9999px"; ta.style.top = "0";
+      document.body.appendChild(ta); ta.select();
+      ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+    } catch (e) { ok = false; }
+    setMsg(ok ? "已复制完整反馈内容，可粘到 QQ 群、邮件或任意渠道。" : "复制失败，请手动选中文本框内容后按 Ctrl+C。", ok ? "ok" : "err");
+  }
+  function onCopy() {
+    if (needText()) return;
+    var p = compose(collect());
+    saveDraft();
+    if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(p.body).then(function () {
+        setMsg("已复制完整反馈内容（含来源页面与时间），可粘到 QQ 群、邮件或任意渠道。", "ok");
+      }, function () { fallbackCopy(p.body); });
+    } else { fallbackCopy(p.body); }
+  }
+  function onClear() {
+    [kind, where, text, contact].forEach(function (e) { if (e) e.value = ""; });
+    dropDraft(); count(); setMsg("已清空并删除本机草稿。");
+  }
+
+  // —— 事件绑定（「邮件发送」按钮仅在配置了 FB_MAIL 时出现） ——
+  if (!FB_MAIL && mailBtn && mailBtn.parentNode) mailBtn.parentNode.removeChild(mailBtn);
+  if (submitBtn && submitBtn.addEventListener) submitBtn.addEventListener("click", onSubmit);
+  if (mailBtn && mailBtn.addEventListener) mailBtn.addEventListener("click", onMail);
+  if (copyBtn && copyBtn.addEventListener) copyBtn.addEventListener("click", onCopy);
+  if (clearBtn && clearBtn.addEventListener) clearBtn.addEventListener("click", onClear);
+  [kind, where, text, contact].forEach(function (e) {
+    if (!e || !e.addEventListener) return;
+    ["input", "change"].forEach(function (ev) { e.addEventListener(ev, function () { saveDraft(); count(); }); });
+  });
+  if (text && text.addEventListener) text.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") onSubmit();   // Ctrl / Cmd + Enter 快捷提交
+  });
+  loadDraft();
+  count();
+
+  // 供回归校验（tools/check.js）直接调用：拼装标题 / 正文 / Issue 链接
+  if (typeof window !== "undefined") window.FEEDBACK = { repo: REPO, mail: FB_MAIL, draftKey: DRAFT_KEY, max: MAX, compose: compose };
+})();
 </script>
 <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 <script>

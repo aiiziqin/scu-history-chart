@@ -48,13 +48,14 @@ function sandboxFor(search, hash) {
   vm.createContext(sb);
   return { sb, cache };
 }
-function runPage(p, search) {
+function runPageFull(p, search) {
   const html = fs.readFileSync(path.join(ROOT, p), 'utf8');
   const code = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).join('\n;\n');
   const { sb, cache } = sandboxFor(search);
   vm.runInContext(src + '\n;(function(){\n' + code + '\n})();', sb, { filename: p });
-  return cache;
+  return { sb, cache };
 }
+function runPage(p, search) { return runPageFull(p, search).cache; }
 function* walk(el) { yield el; for (const c of el.children || []) yield* walk(c); }
 
 let pagesOk = true;
@@ -72,6 +73,25 @@ check('时期详情页渲染概述 + 资料来源', card.indexOf('高标准建�
 check('人物链接指向川大官方页', card.indexOf('faculty.scu.edu.cn/wangjunfeng') >= 0 && card.indexOf('faculty.scu.edu.cn/youzhisheng') >= 0);
 check('社群线索只在资料来源区出现', card.slice(0, card.indexOf('资料来源')).indexOf('鸣渊') < 0 && card.indexOf('鸣渊') >= 0);
 
+
+// ---------- 2.5) 主页页脚反馈表单（数据落到 GitHub Issues） ----------
+const idxHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+check('主页页脚含反馈表单（类型/内容/联系方式 + 本机草稿）',
+  idxHtml.indexOf('<section class="feedback"') >= 0 && idxHtml.indexOf('id="fbText"') >= 0 &&
+  idxHtml.indexOf('id="fbSubmit"') >= 0 && idxHtml.indexOf('localStorage') >= 0);
+const fbApi = runPageFull('index.html', '').sb.window.FEEDBACK;
+check('反馈接口 window.FEEDBACK.compose() 可用',
+  !!fbApi && typeof fbApi.compose === 'function' && fbApi.repo === 'https://github.com/aiiziqin/scu-history-chart');
+let fbUrl = '', fbDecoded = '';
+if (fbApi && typeof fbApi.compose === 'function') {
+  const p = fbApi.compose({ kind: '数据勘误（年份 / 院名 / 沿革 / 流向）', where: '化学工程学院 1952 年', text: '应为四川化学工业学院。',
+    contact: '', page: 'https://aiiziqin.github.io/scu-history-chart/', at: '2026-09-25 10:00', ua: 'QA' });
+  fbUrl = p.url;
+  fbDecoded = decodeURIComponent(p.url.replace(/\+/g, ' '));
+}
+check('提交链接＝本仓库 issues/new，标题/正文已预填',
+  /^https:\/\/github\.com\/aiiziqin\/scu-history-chart\/issues\/new\?title=/.test(fbUrl) &&
+  fbDecoded.indexOf('数据勘误') >= 0 && fbDecoded.indexOf('应为四川化学工业学院') >= 0 && fbDecoded.indexOf('来源页面') >= 0);
 
 // ---------- 3) dist 导出版 ----------
 const OUT = path.join(ROOT, 'dist');
@@ -102,12 +122,15 @@ if (fs.existsSync(OUT)) {
       const { sb, cache } = sandboxFor('', hash);
       scripts.forEach((c, i) => vm.runInContext(c, sb, { filename: 'single#' + i }));
       if (view === 'index' && [...walk(cache.chart)].filter(e => e.tagName === 'circle' && e.attrs.r === 4.1).length !== pairs) routesOk = false;
+      if (view === 'index' && (((cache['view-index'] || {}).innerHTML || '').indexOf('id="fbText"') < 0 ||
+        !(sb.window.FEEDBACK && typeof sb.window.FEEDBACK.compose === 'function'))) routesOk = false;
       if (view === 'college' && !/空天/.test((cache.title.textContent || ''))) routesOk = false;
       if (view === 'period' && ((cache.card.innerHTML || '').indexOf('资料来源') < 0)) routesOk = false;
       if (view === 'flows' && (((cache.list.innerHTML || '').match(/<li>/g) || []).length !== D.FLOWS.length)) routesOk = false;
     } catch (e) { routesOk = false; console.log('      路由异常 ' + hash + ': ' + e.message); }
   });
   check('单文件版 5 条路由渲染正常', routesOk);
+  check('dist/index.html 含底部反馈表单', fs.readFileSync(path.join(OUT, 'index.html'), 'utf8').indexOf('id="fbText"') >= 0);
 } else {
   console.log('SKIP  dist/ 不存在（先运行 node tools/build-dist.js <版本>）');
 }
