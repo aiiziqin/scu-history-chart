@@ -20,6 +20,7 @@
 - 另提供三条替代路径：**复制内容**（`navigator.clipboard`，失败时回退 `execCommand` 并提示手动复制）、**改用邮件发送**（`mailto:`，`index.html` 脚本里的 `FB_MAIL` 填维护者邮箱后才显示该按钮，留空自动隐藏）、**清空**（同时删除本机草稿）。
 - **草稿自动存在浏览器本地**：`localStorage` 键 `scu-history-chart/feedback-draft`，输入即存、打开页面自动回填，隐私模式或被禁用时静默跳过；仅用于「刷新/关页不丢」，不作为正式存档。
 - 表单逻辑暴露纯函数 `window.FEEDBACK.compose()`（拼装标题 / 正文 / Issue 链接，不碰 DOM），供回归校验直接调用。
+- 文案校准（同日补）：提交提示写明「未登录 GitHub 会先跳登录页，登录后预填内容仍在」。另记录一个**易误判点**：未登录访客在**任何**公开仓库的 Issues 页都会看到 `Issue creation is restricted in this repository` 字样（已用 `microsoft/vscode`、`expressjs/express` 对照确认），它**不代表**仓库的「Creation allowed by」设置——本仓库该项为 `Anyone`，表单主路径无需改设置即可用。
 
 ### 校验
 - `node tools/check.js` **30/30**（新增 4 项：主页含页脚反馈表单与 `localStorage` 草稿、`window.FEEDBACK.compose()` 可用且 repo 正确、提交链接＝本仓库 `issues/new` 且标题/正文已预填、`dist/index.html` 含反馈表单；单文件版 index 路由断言追加「渲染后含表单且接口可用」）；单文件版仍满足「无本地 js 依赖」断言。

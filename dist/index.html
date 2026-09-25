@@ -5256,7 +5256,7 @@ ev.innerHTML = "关键事件注记：" + EVENTS.map(t => `<li>${t}</li>`).join("
     var ok = false;
     try { ok = typeof window !== "undefined" && typeof window.open === "function" && !!window.open(url, "_blank", "noopener"); } catch (e) { ok = false; }
     if (!ok) { try { location.href = url; } catch (e) {} }   // 新标签页被拦截时退化为本页跳转
-    setMsg("已打开 GitHub「新建 Issue」页（内容已预填）：确认无误后点 Submit new issue 提交，反馈即归档在本仓库 Issues。新建 Issue 需要 GitHub 账号；没有账号可用「复制内容」或邮件。", "ok");
+    setMsg("已打开 GitHub「新建 Issue」页（内容已预填）：确认无误后点 Submit new issue 提交，反馈即归档在本仓库 Issues。若尚未登录 GitHub，会先跳到登录页，登录后预填内容仍在；没有账号可用「复制内容」或邮件。", "ok");
   }
   function onSubmit() { if (needText() || tooLong()) return; var p = compose(collect()); saveDraft(); openTab(p.url); }
   function onMail() {
